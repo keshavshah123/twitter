@@ -28,7 +28,23 @@ class TweetsController < ApplicationController
 
     respond_to do |format|
       if @tweet.save
-        format.html { redirect_to @tweet, notice: 'Tweet was successfully created.' }
+
+        message_arr = @tweet.message.split
+        message_arr.each_with_index do |word,index|
+          if word[0] == "#"
+            if Tag.pluck(:phrase).include?(word)
+              tag = Tag.find_by(phrase: word)
+            else
+              tag = Tag.create(phrase: word)
+            end
+            tweet_tag = TweetTag.create(tweet_id: @tweet.id, tag_id: tag.id)
+            message_arr[index] = "<a href='/tag_tweets?id=#{tag.id}'>#{word}</a>"
+          end
+        end
+        @tweet.update(message: message_arr.join(""))
+
+
+        format.html { redirect_to root_url, notice: 'Tweet was successfully created.' }
         format.json { render :show, status: :created, location: @tweet }
       else
         format.html { render :new }
